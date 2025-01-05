@@ -158,7 +158,7 @@ print_hex:
     // right-shifting 28 bits to get the top 4 bits. We will then
     // mask off bits 4-32 to leave just the low byte, which we
     // will convert to the proper ASCII value 0-F. Then, we'll
-    // subtract 4 and do it again, until the index is 0.
+    // subtract 4 and do it again, until the index is less than 0.
 
     mov r5, #28                   // Initialize loop counter (28 bits)
     mov r6, #0xF                  // Mask for getting the lower nybble
@@ -192,6 +192,7 @@ print_char:
     bl uart2_tx_chr               // Print the character
     // the s after sub means to update the flags, so the branch can occur
     subs r5, #4                   // Decrement loop counter by 4 bits
+    // the pl after b means plus, positive, or 0
     bpl print_hex_loop            // Branch if loop counter is positive or zero
     
     pop {r4-r7, pc}               // Restore R4-R7 and return
