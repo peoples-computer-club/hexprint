@@ -24,29 +24,29 @@
 
 // Vector interrupt table, all we care about is reset right now
 vtable:
-    .word _estack		            // 0 Top of Stack
-    .word reset_handler	        // 1 Reset interrupt
-    .fill 74, 4                 // We don't care about the rest right now
+  .word _estack		            // 0 Top of Stack
+  .word reset_handler	        // 1 Reset interrupt
+  .fill 74, 4                 // We don't care about the rest right now
 
 .align 4
 
 _start:
 reset_handler:
-    // Initialize the USART connected to the ST-Link device
-    bl uart2_init
-    mov r4, #0
+  // Initialize the USART connected to the ST-Link device
+  bl uart2_init
+  mov r4, #0
 loop:
-    // Start with 0 and increment by 1, printing each number
-    mov r0, r4
-    bl print_hex
-    // Return
-    mov r0, '\r'
-    bl uart2_tx_chr
-    mov r0, '\n'
-    bl uart2_tx_chr
-    // Increment and print again
-    add r4, #1
-    b loop
+  // Start with 0 and increment by 1, printing each number
+  mov r0, r4
+  bl print_hex
+  // Return
+  mov r0, '\r'
+  bl uart2_tx_chr
+  mov r0, '\n'
+  bl uart2_tx_chr
+  // Increment and print again
+  add r4, #1
+  b loop
 
 
 uart2_init:
@@ -131,26 +131,26 @@ usart2_str_done:
 
 // R0 contains the 32-bit integer we will print in hexidecimal
 print_hex:
-    push {r4-r7, lr}
-    mov r4, r0                    // Store the value to print in R4
-    mov r5, #28                   // Initialize loop counter (28 bits)
-    mov r6, #0xF                  // Mask for getting the lower nybble
+  push {r4-r7, lr}
+  mov r4, r0                    // Store the value to print in R4
+  mov r5, #28                   // Initialize loop counter (28 bits)
+  mov r6, #0xF                  // Mask for getting the lower nybble
     
 print_hex_loop:
-    mov r7, r4                    // Copy the value to R7
-    lsr r7, r5                    // Shift the value to get the current nybble
-    and r7, r6                    // Mask the lower nybble using R6
-    cmp r7, #9                    // Compare the digit to 9
-    bls print_digit               // Branch if <= 9
-    add r7, #('A' - 10)           // Convert to A-F
-    b print_char
+  mov r7, r4                    // Copy the value to R7
+  lsr r7, r5                    // Shift the value to get the current nybble
+  and r7, r6                    // Mask the lower nybble using R6
+  cmp r7, #9                    // Compare the digit to 9
+  bls print_digit               // Branch if <= 9
+  add r7, #('A' - 10)           // Convert to A-F
+  b print_char
     
 print_digit:
-    add r7, #'0'                  // Convert to ASCII digit
+  add r7, #'0'                  // Convert to ASCII digit
     
 print_char:
-    mov r0, r7                    // Move the ASCII character to R0
-    bl uart2_tx_chr               // Print the character
-    subs r5, #4                   // Decrement loop counter by 4 bits
-    bpl print_hex_loop            // Branch if loop counter is positive or zero
-    pop {r4-r7, pc}               // Restore R4-R7 and return
+  mov r0, r7                    // Move the ASCII character to R0
+  bl uart2_tx_chr               // Print the character
+  subs r5, #4                   // Decrement loop counter by 4 bits
+  bpl print_hex_loop            // Branch if loop counter is positive or zero
+  pop {r4-r7, pc}               // Restore R4-R7 and return

@@ -24,32 +24,32 @@
 
 // Vector interrupt table, all we care about is reset right now
 vtable:
-    .word _estack		            // 0 Top of Stack
-    .word reset_handler	        // 1 Reset interrupt
-    .fill 74, 4                 // We don't care about the rest right now
+  .word _estack		            // 0 Top of Stack
+  .word reset_handler	        // 1 Reset interrupt
+  .fill 74, 4                 // We don't care about the rest right now
 
 .align 4
 
 _start:
 reset_handler:
-    // Initialize the USART connected to the ST-Link device
-    bl uart2_init
-    mov r4, #0
+  // Initialize the USART connected to the ST-Link device
+  bl uart2_init
+  mov r4, #0
 loop:
-    // Instead of printing a string, we will print hex values.
-    // We'll start off with 0, and add 1 each time and print
-    // the new value. This will print hex values from 00000000 to
-    // FFFFFFFF.
-    mov r0, r4
-    bl print_hex
-    // Print line feed and carriage return
-    mov r0, '\r'
-    bl uart2_tx_chr
-    mov r0, '\n'
-    bl uart2_tx_chr
-    // Increment and print again
-    add r4, #1
-    b loop
+  // Instead of printing a string, we will print hex values.
+  // We'll start off with 0, and add 1 each time and print
+  // the new value. This will print hex values from 00000000 to
+  // FFFFFFFF.
+  mov r0, r4
+  bl print_hex
+  // Print line feed and carriage return
+  mov r0, '\r'
+  bl uart2_tx_chr
+  mov r0, '\n'
+  bl uart2_tx_chr
+  // Increment and print again
+  add r4, #1
+  b loop
 
 
 uart2_init:
@@ -134,65 +134,65 @@ usart2_str_done:
 
 // R0 contains the 32-bit integer we will print in hexidecimal
 print_hex:
-    // Let's say we have the number 305,441,741 in the r0 register.
-    // The r0 register is 32 bits, and each hex digit would be
-    // 4 bits, which is why hex is such a nice number base for
-    // computers. We will print the left-most hex digit first, then
-    // the next, and so on. So we'll need to shift and mask
-    // each 4-bit nybble, which will then result in a number between
-    // 0 and 15, which we will convert into an ASCII digit between
-    // 0-9, or A-F if the number is between 10-15.
+  // Let's say we have the number 305,441,741 in the r0 register.
+  // The r0 register is 32 bits, and each hex digit would be
+  // 4 bits, which is why hex is such a nice number base for
+  // computers. We will print the left-most hex digit first, then
+  // the next, and so on. So we'll need to shift and mask
+  // each 4-bit nybble, which will then result in a number between
+  // 0 and 15, which we will convert into an ASCII digit between
+  // 0-9, or A-F if the number is between 10-15.
 
-    // Preserve the registers we have to preserve, following the
-    // ARM procedure call standard.
-    push {r4-r7, lr}
+  // Preserve the registers we have to preserve, following the
+  // ARM procedure call standard.
+  push {r4-r7, lr}
     
-    // Since we will need to use r0 to call functions, move to
-    // a "local" register.
-    mov r4, r0                    // Store the value to print in R4
+  // Since we will need to use r0 to call functions, move to
+  // a "local" register.
+  mov r4, r0                    // Store the value to print in R4
 
-    // A common pattern is to create an index or index-like value
-    // to iterate over an array, or do some manipulation. We saw it
-    // when printing a string. Here we use it to know how much to
-    // right-shift the value. So we'll start by shifting the number
-    // right-shifting 28 bits to get the top 4 bits. We will then
-    // mask off bits 4-32 to leave just the low byte, which we
-    // will convert to the proper ASCII value 0-F. Then, we'll
-    // subtract 4 and do it again, until the index is less than 0.
+  // A common pattern is to create an index or index-like value
+  // to iterate over an array, or do some manipulation. We saw it
+  // when printing a string. Here we use it to know how much to
+  // right-shift the value. So we'll start by shifting the number
+  // right-shifting 28 bits to get the top 4 bits. We will then
+  // mask off bits 4-32 to leave just the low byte, which we
+  // will convert to the proper ASCII value 0-F. Then, we'll
+  // subtract 4 and do it again, until the index is less than 0.
 
-    mov r5, #28                   // Initialize loop counter (28 bits)
-    mov r6, #0xF                  // Mask for getting the lower nybble
+  mov r5, #28                   // Initialize loop counter (28 bits)
+  mov r6, #0xF                  // Mask for getting the lower nybble
     
 print_hex_loop:
-    // We move the original value to r7 to shift it right and mask
-    mov r7, r4                    // Copy the value to R7
-    lsr r7, r5                    // Shift the value to get the current nybble
-    and r7, r6                    // Mask the lower nybble using R6
+  // We move the original value to r7 to shift it right and mask
+  mov r7, r4                    // Copy the value to R7
+  lsr r7, r5                    // Shift the value to get the current nybble
+  and r7, r6                    // Mask the lower nybble using R6
     
-    // If the digit is 9 or less, we'll add the ASCII value of 0
-    // to print 0 to 9. If it 10 or more, we subtract 10 then add
-    // the value of the ASCII character 'A'
-    cmp r7, #9                    // Compare the digit to 9
-    // The ls after the b branch instruction is a conditional, which
-    // means only branch if "less than or the same"
-    bls print_digit               // Branch if <= 9
+  // If the digit is 9 or less, we'll add the ASCII value of 0
+  // to print 0 to 9. If it 10 or more, we subtract 10 then add
+  // the value of the ASCII character 'A'
+  cmp r7, #9                    // Compare the digit to 9
+  // The ls after the b branch instruction is a conditional, which
+  // means only branch if "less than or the same"
+  bls print_digit               // Branch if <= 9
     
-    add r7, #('A' - 10)           // Convert to A-F
-    b print_char
+  add r7, #('A' - 10)           // Convert to A-F
+  b print_char
     
 print_digit:
-    // It's between 0-9, so add the ASCII value of '0' since
-    // ASCII digits 0-9 are consecutive in ASCII
-    add r7, #'0'                  // Convert to ASCII digit
+  // It's between 0-9, so add the ASCII value of '0' since
+  // ASCII digits 0-9 are consecutive in ASCII
+  add r7, #'0'                  // Convert to ASCII digit
     
 print_char:
-    // Now that r0 has been converted to an ASCII value of 0-9 or A-F
-    // print it using our print character function
-    mov r0, r7                    // Move the ASCII character to R0
-    bl uart2_tx_chr               // Print the character
-    // the s after sub means to update the flags, so the branch can occur
-    subs r5, #4                   // Decrement loop counter by 4 bits
-    // the pl after b means plus, positive, or 0
-    bpl print_hex_loop            // Branch if loop counter is positive or zero
+  // Now that r0 has been converted to an ASCII value of 0-9 or A-F
+  // print it using our print character function
+  mov r0, r7                    // Move the ASCII character to R0
+  bl uart2_tx_chr               // Print the character
+  // the s after sub means to update the flags, so the branch can occur
+  subs r5, #4                   // Decrement loop counter by 4 bits
+  // the pl after b means plus, positive, or 0
+  bpl print_hex_loop            // Branch if loop counter is positive or zero
     
-    pop {r4-r7, pc}               // Restore R4-R7 and return
+  pop {r4-r7, pc}               // Restore R4-R7 and return
